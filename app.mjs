@@ -1,5 +1,6 @@
 import Jimp from 'jimp';
 import inquirer from 'inquirer';
+import fs from 'node:fs';
 
 const addTextWatermarkToImage = async function(inputFile, outputFile, text) {
   const image = await Jimp.read(inputFile);
@@ -12,6 +13,9 @@ const addTextWatermarkToImage = async function(inputFile, outputFile, text) {
 
   image.print(font, 0, 0, textData, image.getWidth(), image.getHeight());
   await image.quality(100).writeAsync(outputFile);
+
+  console.log('Text watermark added successfully.');
+  startApp();
 };
 
 const addImageWatermarkToImage = async function(inputFile, outputFile, watermarkFile) {
@@ -25,6 +29,9 @@ const addImageWatermarkToImage = async function(inputFile, outputFile, watermark
     opacitySource: 0.5,
   });
   await image.quality(100).writeAsync(outputFile);
+
+  console.log('Image watermark added successfully.');
+  startApp();
 };
 
 const prepareOutputFilename = (filename) => {
@@ -63,7 +70,15 @@ const startApp = async () => {
       message: 'Type your watermark text:',
     }])
     options.watermarkText = text.value;
-    addTextWatermarkToImage('./img/' + options.inputImage, './img/' + prepareOutputFilename(options.inputImage), options.watermarkText);
+    
+    const inputImagePath = './img/' + options.inputImage;
+    const outputImagePath = './img/' + prepareOutputFilename(options.inputImage);
+
+    if (fs.existsSync(inputImagePath)) {
+      addTextWatermarkToImage(inputImagePath, outputImagePath, options.watermarkText);
+    } else {
+      console.log('The source file does not exist.');
+    }
   }
   else {
     const image = await inquirer.prompt([{
@@ -73,7 +88,15 @@ const startApp = async () => {
       default: 'logo.png',
     }])
     options.watermarkImage = image.filename;
-    addImageWatermarkToImage('./img/' + options.inputImage, './img/' + prepareOutputFilename(options.inputImage), './img/' + options.watermarkImage);
+    const inputImagePath = './img/' + options.inputImage;
+    const outputImagePath = './img/' + prepareOutputFilename(options.inputImage);
+    const watermarkImagePath = './img/' + options.watermarkImage;
+  
+    if (fs.existsSync(inputImagePath) && fs.existsSync(watermarkImagePath)) {
+      addImageWatermarkToImage(inputImagePath, outputImagePath, watermarkImagePath);
+    } else {
+      console.log('The source file or watermark file does not exist.');
+    }
   }
 
 };
